@@ -1,0 +1,63 @@
+trigger:
+  branches:
+    include:
+      - main
+      - develop
+
+pool:
+  vmImage: 'windows-latest'
+
+steps:
+
+# Restore
+- task: DotNetCoreCLI@2
+  displayName: "Restore"
+  inputs:
+    command: 'restore'
+    projects: '**/*.csproj'
+
+# Build
+- task: DotNetCoreCLI@2
+  displayName: "Build"
+  inputs:
+    command: 'build'
+    projects: '**/*.csproj'
+
+# Test
+- task: DotNetCoreCLI@2
+  displayName: "Test"
+  inputs:
+    command: 'test'
+    projects: '**/*Tests*.csproj'
+    publishTestResults: true
+
+# Publish ConsoleUI
+- task: DotNetCoreCLI@2
+  displayName: "Publish Console UI"
+  inputs:
+    command: 'publish'
+    projects: '**/GC.ConsoleUI/*.csproj'
+    arguments: '--configuration Release --output $(Build.ArtifactStagingDirectory)/ConsoleUI'
+
+# Publish ModifierNomPrenom
+- task: DotNetCoreCLI@2
+  displayName: "Publish ModifierNomPrenom"
+  inputs:
+    command: 'publish'
+    projects: '**/GC.Batch.ModifierNomPrenom*/.csproj'
+    arguments: '--configuration Release --output $(Build.ArtifactStagingDirectory)/ModifierNomPrenom'
+
+# Publish ModifierPays
+- task: DotNetCoreCLI@2
+  displayName: "Publish ModifierPays"
+  inputs:
+    command: 'publish'
+    projects: '**/GC.Batch.ModifierPays*/.csproj'
+    arguments: '--configuration Release --output $(Build.ArtifactStagingDirectory)/ModifierPays'
+
+# Publish Artifacts
+- task: PublishBuildArtifacts@1
+  displayName: "Publish Artifacts"
+  inputs:
+    pathtoPublish: '$(Build.ArtifactStagingDirectory)'
+    artifactName: 'Artifacts'
