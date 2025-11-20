@@ -8,56 +8,90 @@ pool:
   vmImage: 'windows-latest'
 
 steps:
+# 1. Use .NET SDK 8.x  (équivalent "Use .NET SDK")
+- task: UseDotNet@2
+  displayName: 'Use .NET SDK 8.x'
+  inputs:
+    packageType: 'sdk'
+    version: '8.x'
+    installationPath: '$(Agent.ToolsDirectory)/dotnet'
 
-# Restore
+# 2. Restore (équivalent "NuGet restore" + pattern **/*.csproj)
 - task: DotNetCoreCLI@2
-  displayName: "Restore"
+  displayName: 'dotnet restore'
   inputs:
     command: 'restore'
     projects: '**/*.csproj'
 
-# Build
+# 3. Build  (équivalent "dotnet build", **/*.csproj, args -c Release)
 - task: DotNetCoreCLI@2
-  displayName: "Build"
+  displayName: 'dotnet build'
   inputs:
     command: 'build'
     projects: '**/*.csproj'
+    arguments: '-c Release'
 
-# Test
+# 4. Test  (équivalent "dotnet test", **/*[Tt]tests/*.csproj)
 - task: DotNetCoreCLI@2
-  displayName: "Test"
+  displayName: 'dotnet test'
   inputs:
     command: 'test'
-    projects: '**/*Tests*.csproj'
+    projects: '**/*[Tt]tests/*.csproj'
     publishTestResults: true
 
-# Publish ConsoleUI
+# 5. Publish ConsoleUI  (équivalent tâche "Publish ConsoleUI")
 - task: DotNetCoreCLI@2
-  displayName: "Publish Console UI"
+  displayName: 'Publish ConsoleUI'
   inputs:
     command: 'publish'
+    publishWebProjects: false
     projects: '**/GC.ConsoleUI/*.csproj'
-    arguments: '--configuration Release --output $(Build.ArtifactStagingDirectory)/ConsoleUI'
+    arguments: '-c Release -o $(Build.ArtifactStagingDirectory)/ConsoleUI'
+    zipAfterPublish: true           # Zip published projects
+    modifyOutputPath: true          # Add project folder name to publish path
 
-# Publish ModifierNomPrenom
+# 6. Publish batch ModifierNomPrenom  (équivalent "Publish ModifierNomPrenom")
 - task: DotNetCoreCLI@2
-  displayName: "Publish ModifierNomPrenom"
+  displayName: 'Publish ModifierNomPrenom'
   inputs:
     command: 'publish'
-    projects: '**/GC.Batch.ModifierNomPrenom*/.csproj'
-    arguments: '--configuration Release --output $(Build.ArtifactStagingDirectory)/ModifierNomPrenom'
+    publishWebProjects: false
+    projects: '**/GC.Batch.ModifierNomPrenomPremiereLettreMajuscules/*.csproj'
+    arguments: '-c Release -o $(Build.ArtifactStagingDirectory)/BatchNomPrenom'
+    zipAfterPublish: true
+    modifyOutputPath: true
 
-# Publish ModifierPays
+# 7. Publish batch ModifierPays  (équivalent "Publish ModifierPays")
 - task: DotNetCoreCLI@2
-  displayName: "Publish ModifierPays"
+  displayName: 'Publish ModifierPays'
   inputs:
     command: 'publish'
-    projects: '**/GC.Batch.ModifierPays*/.csproj'
-    arguments: '--configuration Release --output $(Build.ArtifactStagingDirectory)/ModifierPays'
+    publishWebProjects: false
+    projects: '**/GC.Batch.ModifierPaysMajusculesClients/*.csproj'
+    arguments: '-c Release -o $(Build.ArtifactStagingDirectory)/BatchPays'
+    zipAfterPublish: true
+    modifyOutputPath: true
 
-# Publish Artifacts
+# 8. Publish artifact ConsoleUI  (équivalent tâche "Artifact ConsoleUI")
 - task: PublishBuildArtifacts@1
-  displayName: "Publish Artifacts"
+  displayName: 'Artifact ConsoleUI'
   inputs:
-    pathtoPublish: '$(Build.ArtifactStagingDirectory)'
-    artifactName: 'Artifacts'
+    pathtoPublish: '$(Build.ArtifactStagingDirectory)/ConsoleUI'
+    artifactName: 'GC.ConsoleUI'
+    publishLocation: 'Container'     # Azure Pipelines
+
+# 9. Publish artifact ModifierNomPrenom
+- task: PublishBuildArtifacts@1
+  displayName: 'Artifact ModifierNomPrenom'
+  inputs:
+    pathtoPublish: '$(Build.ArtifactStagingDirectory)/BatchNomPrenom'
+    artifactName: 'GC.Batch.ModifierNomPrenomPremiereLettreMajuscules'
+    publishLocation: 'Container'
+
+# 10. Publish artifact ModifierPays
+- task: PublishBuildArtifacts@1
+  displayName: 'Artifact ModifierPays'
+  inputs:
+    pathtoPublish: '$(Build.ArtifactStagingDirectory)/BatchPays'
+    artifactName: 'GC.Batch.ModifierPaysMajusculesClients'
+    publishLocation: 'Container'
